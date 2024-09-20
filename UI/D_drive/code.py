@@ -20,16 +20,18 @@ from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.roundrect import RoundRect
 from adafruit_display_shapes.triangle import Triangle
 from adafruit_display_shapes.line import Line
+from adafruit_touchscreen import Touchscreen
 
 # pin defs for DVI Sock
 displayio.release_displays()
+
 fb = picodvi.Framebuffer(320, 240,
 	clk_dp=board.GP14, clk_dn=board.GP15,
 	red_dp=board.GP12, red_dn=board.GP13,
 	green_dp=board.GP18, green_dn=board.GP19,
 	blue_dp=board.GP16, blue_dn=board.GP17,
 	color_depth=8)
-display = framebufferio.FramebufferDisplay(fb)
+display = framebufferio.FramebufferDisplay(fb, rotation=270)
 
 bitmap = displayio.Bitmap(display.width, display.height, 3)
 
@@ -42,7 +44,7 @@ purple = 0x5500ff
 white = 0xffffff
 green =  0x00ff00
 aqua = 0x125690
-gray = 0xdcdcdc
+gray = 0x4C4C4C
 
 palette = displayio.Palette(3)
 palette[0] = 0x000000 # black
@@ -71,17 +73,24 @@ def initialize_shapes():
     print(display.height)
 
     # Create RoundRect and Triangle
-    rnd = RoundRect(cx + pad, cy + pad, size, size, int(size / 5), stroke=1, fill=gray, outline=yellow)
-    tri = Triangle(cx + pad, cy - pad, cx + pad + half, cy - minor, cx + minor - 1, cy - pad, fill=pink, outline=green)
-
+    rnd = RoundRect(cx-100 , cy -130, 200, 20, int(size / 5), stroke=1, fill=gray, outline=yellow)
+    tri1 = Triangle(cx-40, cy-140, cx, cy - 150, cx + 40, cy-140, fill=pink, outline=blue)
+    tri2 = Triangle(cx-40, cy-100, cx, cy - 90, cx + 40, cy-100, fill=pink, outline=blue)
+    TEXT = "Testing ----"
+    text = label.Label(terminalio.FONT, text=TEXT,color=white)
+    text.anchor_point = (0.5, 0.5)
+    text.anchored_position = (120, 40)
+    
     # Add the shapes to the group
     group.append(rnd)
-    group.append(tri)
+    group.append(tri1)
+    group.append(tri2)
+    group.append(text)
 
-    return rnd, tri 
+    return rnd, tri1, tri2 
 
 def main_loop():
-    rnd, tri = initialize_shapes() # Initialization
+    rnd, tri1, tri2 = initialize_shapes() # Initialization
 
     while True:
         gc.collect()  # Free up memory
@@ -89,7 +98,9 @@ def main_loop():
 # Set root group once, before entering the main loop
 display.root_group = group
 
+
 # Start the main loop
 main_loop()
+
 
 
