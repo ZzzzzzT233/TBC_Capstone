@@ -5,10 +5,15 @@ import picodvi
 import board
 import framebufferio
 import terminalio
-import digitalio  # For handling button input
+import digitalio 
 from adafruit_display_text import label
 from adafruit_display_shapes.roundrect import RoundRect
+from adafruit_display_shapes.rect import Rect
 from adafruit_display_shapes.triangle import Triangle
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on          import NoteOn
+from adafruit_midi.note_off         import NoteOff
 
 # Pin defs for DVI Sock
 displayio.release_displays()
@@ -27,6 +32,7 @@ gray = 0x4C4C4C
 yellow = 0xcccc00
 pink = 0xff00ff
 blue = 0x0000ff
+light_blue = 0xBFE7F7
 
 group = displayio.Group()
 
@@ -35,21 +41,28 @@ select = digitalio.DigitalInOut(board.GP6)
 select.direction = digitalio.Direction.INPUT
 select.pull = digitalio.Pull.UP  
 
-#  Up and Down button pins
-note_pins = [board.GP7, board.GP8]
-note_buttons = []
-for pin in note_pins:
-    note_pin = digitalio.DigitalInOut(pin)
-    note_pin.direction = digitalio.Direction.INPUT
-    note_pin.pull = digitalio.Pull.UP
-    note_buttons.append(note_pin)
+up_button = digitalio.DigitalInOut(board.GP7)
+up_button.direction = digitalio.Direction.INPUT
+up_button.pull = digitalio.Pull.UP
+down_button = digitalio.DigitalInOut(board.GP8)
+down_button.direction = digitalio.Direction.INPUT
+down_button.pull = digitalio.Pull.UP
 
-#  note states
-note0_pressed = False
-note1_pressed = False
+#  Up and Down button pins
+# note_pins = [board.GP7, board.GP8]
+# note_buttons = []
+# for pin in note_pins:
+#     note_pin = digitalio.DigitalInOut(pin)
+#     note_pin.direction = digitalio.Direction.INPUT
+#     note_pin.pull = digitalio.Pull.UP
+#     note_buttons.append(note_pin)
+# 
+# #  note states
+# note0_pressed = False
+# note1_pressed = False
 
 #  array of note states
-note_states = [note0_pressed, note1_pressed]
+# note_states = [note0_pressed, note1_pressed]
 
 def clean_up(group_name):
     for _ in range(len(group_name)):
@@ -79,15 +92,17 @@ def initialize_page():
     size = minor - pad
     global text, tri1, tri2, rnd
     # Create RoundRect and Triangles
+    bg = Rect(0, 0, display.width, display.height, fill=0x5069a5)
     rnd = RoundRect(cx - 100, cy - 130, 200, 20, int(size / 5), stroke=1, fill=gray, outline=yellow)
     tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=pink, outline=blue)
     tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=pink, outline=blue)
-    
     text = label.Label(terminalio.FONT, text="Page 1", color=white)
+
     text.anchor_point = (0.5, 0.5)
     text.anchored_position = (120, 40)
     
     # Add the shapes to the group
+    group.append(bg)
     group.append(rnd)
     group.append(tri2)
     group.append(text)
@@ -101,23 +116,31 @@ def main_loop():
     initialize_page()
     
     while True:
-        time.sleep(2)
-        next_page = 2
-        current_page = update_content(next_page, current_page)
-        time.sleep(2)
-        next_page = 3
-        current_page = update_content(next_page, current_page)
-        time.sleep(2)
-        next_page = 2
-        current_page = update_content(next_page, current_page)
-        time.sleep(2)
-        next_page = 1
-        current_page = update_content(next_page, current_page)
-        time.sleep(2)
+#         time.sleep(2)
+#         next_page = 2
+#         current_page = update_content(next_page, current_page)
+#         time.sleep(2)
+#         next_page = 3
+#         current_page = update_content(next_page, current_page)
+#         time.sleep(2)
+#         next_page = 2
+#         current_page = update_content(next_page, current_page)
+#         time.sleep(2)
+#         next_page = 1
+#         current_page = update_content(next_page, current_page)
+#         time.sleep(2)
+        if not up_button.value:
+            if next_page > 1:
+                next_page -= 1
+            current_page = update_content(next_page, current_page)
+        
+        if not down_button.value:
+            if next_page < 3:
+                next_page += 1
+            current_page = update_content(next_page, current_page)
 
 # Set root group once, before entering the main loop
 display.root_group = group
 
 # Start the main loop
 main_loop()
-
