@@ -25,21 +25,21 @@ keys = [
 ]
 
 chords = {
-    "C major": ["Em", "Am", "Dm", "G", "C", "F", "E, G, B", "A, C, E", "D, F, A", "G, B, D", "C, E, G", "F, A, C"],
-    "D major": ["F#m", "Bm", "Em", "A", "D", "G", "F#, A, C#", "B, D, F#", "E, G, B", "A, C#, E", "D, F#, A", "G, B, D"],
-    "E major": ["G#m", "C#m", "F#m", "B", "E", "A", "G#, B, D#", "C#, E, G#", "F#, A, C#", "B, D#, F#", "E, G#, B", "A, C#, E"],
-    "F major": ["Am", "Dm", "Gm", "C", "F", "Bb", "A, C, E", "D, F, A", "G, Bb, D", "C, E, G", "F, A, C", "Bb, D, F"],
-    "G major": ["Bm", "Em", "Am", "D", "G", "C", "B, D, F#", "E, G, B", "A, C, E", "D, F#, A", "G, B, D", "C, E, G"],
-    "A major": ["C#m", "F#m", "Bm", "E", "A", "D", "C#, E, G#", "F#, A, C#", "B, D, F#", "E, G#, B", "A, C#, E", "D, F#, A"],
-    "B major": ["D#m", "G#m", "C#m", "F#", "B", "E", "D#, F#, A#", "G#, B, D#", "C#, E, G#", "F#, A#, C#", "B, D#, F#", "E, G#, B"],
+    "C major": ["Em", "Am", "Dm", "G", "C", "F", "E", "A", "D", "G", "C", "F"],
+    "D major": ["F#m", "Bm", "Em", "A", "D", "G", "F#", "B", "E", "A", "D", "G"],
+    "E major": ["G#m", "C#m", "F#m", "B", "E", "A", "G#", "C#", "F#", "B", "E", "A"],
+    "F major": ["Am", "Dm", "Gm", "C", "F", "Bb", "A", "D", "G", "C", "F", "Bb"],
+    "G major": ["Bm", "Em", "Am", "D", "G", "C", "B", "E", "A", "D", "G", "C"],
+    "A major": ["C#m", "F#m", "Bm", "E", "A", "D", "C#", "F#", "B", "E", "A", "D"],
+    "B major": ["D#m", "G#m", "C#m", "F#", "B", "E", "D#", "G#", "C#", "F#", "B", "E"],
     
-    "C minor": ["Eb", "Ab", "Ddim", "G", "Cm", "Fm", "Eb, G, Bb", "Ab, C, Eb", "D, F, Ab", "G, Bb, D", "C, Eb, G", "F, Ab, C"],
-    "D minor": ["F", "Bb", "Edim", "A", "Dm", "Gm", "F, A, C", "Bb, D, F", "E, G, Bb", "A, C#, E", "D, F, A", "G, Bb, D"],
-    "E minor": ["G", "C", "F#dim", "B", "Em", "Am", "G, B, D", "C, E, G", "F#, A, C", "B, D#, F#", "E, G, B", "A, C, E"],
-    "F minor": ["Ab", "Db", "Gdim", "Cm", "Fm", "Bbm", "Ab, C, Eb", "Db, F, Ab", "G, Bb, Db", "C, Eb, G", "F, Ab, C", "Bb, Db, F"],
-    "G minor": ["Bb", "Eb", "Adim", "D", "Gm", "Cm", "Bb, D, F", "Eb, G, Bb", "A, C, Eb", "D, F#, A", "G, Bb, D", "C, Eb, G"],
-    "A minor": ["C", "F", "Bdim", "E", "Am", "Dm", "C, E, G", "F, A, C", "B, D, F", "E, G#, B", "A, C, E", "D, F, A"],
-    "B minor": ["D", "G", "C#dim", "F#", "Bm", "Em", "D, F#, A", "G, B, D", "C#, E, G", "F#, A#, C#", "B, D, F#", "E, G, B"]
+    "C minor": ["Eb", "Ab", "Ddim", "G", "Cm", "Fm", "Eb", "Ab", "D", "G", "C", "F"],
+    "D minor": ["F", "Bb", "Edim", "A", "Dm", "Gm", "F", "Bb", "E", "A", "D", "G"],
+    "E minor": ["G", "C", "F#dim", "B", "Em", "Am", "G", "C", "F#", "B", "E", "A"],
+    "F minor": ["Ab", "Db", "Gdim", "Cm", "Fm", "Bbm", "Ab", "Db", "G", "C", "F", "Bb"],
+    "G minor": ["Bb", "Eb", "Adim", "D", "Gm", "Cm", "Bb", "Eb", "A", "D", "G", "C"],
+    "A minor": ["C", "F", "Bdim", "E", "Am", "Dm", "C", "F", "B", "E", "A", "D"],
+    "B minor": ["D", "G", "C#dim", "F#", "Bm", "Em", "D", "G", "C#", "F#", "B", "E"]
 }
 
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
@@ -204,6 +204,18 @@ def update_key_selection(next_key_index, current_key_index):
     text.text = keys[next_key_index]
     gc.collect()
     return next_key_index
+
+def display_chords_for_key(selected_key):
+    if tri1 in group:
+        group.remove(tri1)
+    if tri2 in group:
+        group.remove(tri2)
+    chord_text_list = chords[selected_key]
+    for i in range(len(chord_label_list)):
+        chord_label_list[i].text = chord_text_list[i]
+        chord_label_list[i].color = 0x5f0f40
+    gc.collect()
+        
     
 def initialize_page():
     cx = int((display.width) / 2)
@@ -212,7 +224,7 @@ def initialize_page():
     pad = 100
     size = minor - pad
 
-    global text, tri1, tri2, rnd, grid_rects
+    global text, tri1, tri2, rnd, grid_rects, chord_label_list
 
     grid_rects = [[], [], []]
 
@@ -222,6 +234,7 @@ def initialize_page():
     tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=pink, outline=blue)
     tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=pink, outline=blue)
     text = label.Label(terminalio.FONT, text="Traditional mode", color=white)
+    chord_label_list = []
 
     text.anchor_point = (0.5, 0.5)
     text.anchored_position = (120, 40)
@@ -247,6 +260,14 @@ def initialize_page():
             rect = Rect(x, y, rect_width, rect_height, fill=white)
             group.append(rect)
             grid_rects[row].append(rect)
+            
+            chord_index = row * 4 + col
+            chord_text = ""
+            text_label = label.Label(terminalio.FONT, text=chord_text)
+            text_label.anchor_point = (0.5, 0.5)
+            text_label.anchored_position = (x + rect_width / 2, y + rect_height / 2)
+            group.append(text_label)
+            chord_label_list.append(text_label)
 
     return text
 
@@ -278,7 +299,7 @@ def modify_mode(text_obj, group, tri1, tri2, mode_text):
 def initialize_chord(tri1, text):
     if text.text == "Chord mode":
         text.text = "Select the Key"
-        time.sleep(1.2)
+        time.sleep(0.5)
         text.text = "C major"
         if tri1 in group:
             group.remove(tri1)
@@ -334,7 +355,7 @@ def main_loop():
                         
                         key_selected = True
                         selected_key = keys[current_key_index]
-                        #display_chords_for_key(selected_key)
+                        display_chords_for_key(selected_key)
                         time.sleep(0.3)
             elif current_page == 3:
                 if not modified:
