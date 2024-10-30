@@ -18,6 +18,30 @@ import busio
 import adafruit_ssd1327
 import digitalio
 
+keys = [
+    "C major", "C minor", "D major", "D minor", "E major", "E minor",
+    "F major", "F minor", "G major", "G minor", "A major", "A minor",
+    "B major", "B minor"
+]
+
+chords = {
+    "C major": ["Em", "Am", "Dm", "G", "C", "F", "E, G, B", "A, C, E", "D, F, A", "G, B, D", "C, E, G", "F, A, C"],
+    "D major": ["F#m", "Bm", "Em", "A", "D", "G", "F#, A, C#", "B, D, F#", "E, G, B", "A, C#, E", "D, F#, A", "G, B, D"],
+    "E major": ["G#m", "C#m", "F#m", "B", "E", "A", "G#, B, D#", "C#, E, G#", "F#, A, C#", "B, D#, F#", "E, G#, B", "A, C#, E"],
+    "F major": ["Am", "Dm", "Gm", "C", "F", "Bb", "A, C, E", "D, F, A", "G, Bb, D", "C, E, G", "F, A, C", "Bb, D, F"],
+    "G major": ["Bm", "Em", "Am", "D", "G", "C", "B, D, F#", "E, G, B", "A, C, E", "D, F#, A", "G, B, D", "C, E, G"],
+    "A major": ["C#m", "F#m", "Bm", "E", "A", "D", "C#, E, G#", "F#, A, C#", "B, D, F#", "E, G#, B", "A, C#, E", "D, F#, A"],
+    "B major": ["D#m", "G#m", "C#m", "F#", "B", "E", "D#, F#, A#", "G#, B, D#", "C#, E, G#", "F#, A#, C#", "B, D#, F#", "E, G#, B"],
+    
+    "C minor": ["Eb", "Ab", "Ddim", "G", "Cm", "Fm", "Eb, G, Bb", "Ab, C, Eb", "D, F, Ab", "G, Bb, D", "C, Eb, G", "F, Ab, C"],
+    "D minor": ["F", "Bb", "Edim", "A", "Dm", "Gm", "F, A, C", "Bb, D, F", "E, G, Bb", "A, C#, E", "D, F, A", "G, Bb, D"],
+    "E minor": ["G", "C", "F#dim", "B", "Em", "Am", "G, B, D", "C, E, G", "F#, A, C", "B, D#, F#", "E, G, B", "A, C, E"],
+    "F minor": ["Ab", "Db", "Gdim", "Cm", "Fm", "Bbm", "Ab, C, Eb", "Db, F, Ab", "G, Bb, Db", "C, Eb, G", "F, Ab, C", "Bb, Db, F"],
+    "G minor": ["Bb", "Eb", "Adim", "D", "Gm", "Cm", "Bb, D, F", "Eb, G, Bb", "A, C, Eb", "D, F#, A", "G, Bb, D", "C, Eb, G"],
+    "A minor": ["C", "F", "Bdim", "E", "Am", "Dm", "C, E, G", "F, A, C", "B, D, F", "E, G#, B", "A, C, E", "D, F, A"],
+    "B minor": ["D", "G", "C#dim", "F#", "Bm", "Em", "D, F#, A", "G, B, D", "C#, E, G", "F#, A#, C#", "B, D, F#", "E, G, B"]
+}
+
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 #  button pins, all pins in order skipping GP15
 note_pins = [
@@ -114,6 +138,7 @@ gray = 0x4C4C4C
 yellow = 0xcccc00
 pink = 0xff00ff
 blue = 0x0000ff
+row_colors = [0xf15bb5, 0xff5400, 0x9b5de5]
 
 group = displayio.Group()
 
@@ -122,12 +147,18 @@ select = digitalio.DigitalInOut(board.GP6)
 select.direction = digitalio.Direction.INPUT
 select.pull = digitalio.Pull.UP
 
+# Setup for 5-way Up and down button
 up_button = digitalio.DigitalInOut(board.GP7)
 up_button.direction = digitalio.Direction.INPUT
 up_button.pull = digitalio.Pull.UP
 down_button = digitalio.DigitalInOut(board.GP8)
 down_button.direction = digitalio.Direction.INPUT
 down_button.pull = digitalio.Pull.UP
+
+# Setup for 5-way exit button
+exit_button = digitalio.DigitalInOut(board.GP5)
+exit_button.direction = digitalio.Direction.INPUT
+exit_button.pull = digitalio.Pull.UP
 
 global option
 
@@ -145,7 +176,7 @@ def clean_up(group_name):
         group_name.pop()
     gc.collect()
 
-def update_content(next_page, current_page):
+def update_mode(next_page, current_page):
     if next_page == 2 and current_page == 1:
         group.append(tri1)
     elif next_page == 3 and current_page == 2:
@@ -154,53 +185,85 @@ def update_content(next_page, current_page):
         group.append(tri2)
     elif next_page == 1 and current_page == 2:
         group.remove(tri1)
-    
+
     text.text = switch_option(next_page)
-    
+
     gc.collect()
     return next_page
-
+    
+def update_key_selection(next_key_index, current_key_index):
+    global tri1, tri2, text
+    if next_key_index == 0 and current_key_index == 1:
+        group.remove(tri1)
+    elif next_key_index == 1 and current_key_index == 0:
+        group.append(tri1)
+    elif next_key_index == 12 and current_key_index == 13:
+        group.append(tri2)
+    elif next_key_index == 13 and current_key_index == 12:
+        group.remove(tri2)
+    text.text = keys[next_key_index]
+    gc.collect()
+    return next_key_index
+    
 def initialize_page():
     cx = int((display.width) / 2)
     cy = int((display.height) / 2)
     minor = min(cx, cy)
     pad = 100
     size = minor - pad
-    
-    global text, tri1, tri2, rnd
-    
+
+    global text, tri1, tri2, rnd, grid_rects
+
+    grid_rects = [[], [], []]
+
     # Create RoundRect and Triangles
-    bg = Rect(0, 0, display.width, display.height, fill=0x5069a5)
-    rnd = RoundRect(cx - 100, cy - 130, 200, 20, int(size / 5), stroke=1, fill=gray, outline=yellow)
+    bg = Rect(0, 0, display.width, display.height, fill=0x5662b6)
+    rnd = RoundRect(cx - 100, cy - 130, 200, 20, int(size / 5), stroke=1, fill=gray, outline=0xf5f5f5)
     tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=pink, outline=blue)
     tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=pink, outline=blue)
     text = label.Label(terminalio.FONT, text="Traditional mode", color=white)
 
     text.anchor_point = (0.5, 0.5)
     text.anchored_position = (120, 40)
-    
+
     # Add the shapes to the group
     group.append(bg)
     group.append(rnd)
     group.append(tri2)
     group.append(text)
-    
-    rect_width = 40  
-    rect_height = 30  
-    margin_x = 10  
+
+    rect_width = 40
+    rect_height = 30
+    margin_x = 10
     margin_y = 30
-    
+
     start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
-    start_y = display.height - rect_height * 3 - margin_y * 2 - 40 
-    
+    start_y = display.height - rect_height * 3 - margin_y * 2 - 40
+
     for row in range(3):
         for col in range(4):
             x = start_x + col * (rect_width + margin_x)
             y = start_y + row * (rect_height + margin_y)
             rect = Rect(x, y, rect_width, rect_height, fill=white)
             group.append(rect)
+            grid_rects[row].append(rect)
 
     return text
+
+def add_outline(fill_color, outline_colors, rect_width=40, rect_height=30, margin_x=10, margin_y=30):
+
+    start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
+    start_y = display.height - rect_height * 3 - margin_y * 2 - 40
+
+    for row_index, rects in enumerate(grid_rects):
+        for col, rect in enumerate(rects):
+            x = start_x + col * (rect_width + margin_x)
+            y = start_y + row_index * (rect_height + margin_y)
+            group.remove(rect)
+            new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=2)
+            group.append(new_rect)
+            grid_rects[row_index][col] = new_rect
+
 
 def modify_mode(text_obj, group, tri1, tri2, mode_text):
     text_obj.text = mode_text
@@ -208,44 +271,86 @@ def modify_mode(text_obj, group, tri1, tri2, mode_text):
         group.remove(tri1)
     if tri2 in group:
         group.remove(tri2)
-    gc.collect()
+    if mode_text == "Strum mode selected":
+        add_outline(fill_color=white, outline_colors=row_colors)
     return True
-
+    
+def initialize_chord(tri1, text):
+    if text.text == "Chord mode":
+        text.text = "Select the Key"
+        time.sleep(1.2)
+        text.text = "C major"
+        if tri1 in group:
+            group.remove(tri1)
+    gc.collect()
+    
 def main_loop():
+    global key_selected
     current_page = 1
     next_page = 1
 
     initialize_page()
     selected = False
     modified = False
+    key_selected = False
+    current_key_index = 0
+    next_key_index = 0
 
     while True:
         if not selected:
             if not up_button.value:
                 if next_page > 1:
                     next_page -= 1
-                current_page = update_content(next_page, current_page)
-                time.sleep(0.5)
-            
+                current_page = update_mode(next_page, current_page)
+                time.sleep(0.3)
+
             if not down_button.value:
                 if next_page < 3:
                     next_page += 1
-                current_page = update_content(next_page, current_page)
-                time.sleep(0.5)
-            
+                current_page = update_mode(next_page, current_page)
+                time.sleep(0.3)
+
             if not select.value:
                 selected = True
-                time.sleep(0.5)
+                time.sleep(0.3)
         else:
             if current_page == 1:
                 if not modified:
                     modified = modify_mode(text, group, tri1, tri2, "Regular mode selected")
-                # implement regular mode functions
             elif current_page == 2:
-                pass
+                if not key_selected:
+                    initialize_chord(tri1, text)
+                    if not up_button.value:
+                        if next_key_index > 0:
+                            next_key_index -= 1
+                            current_key_index = update_key_selection(next_key_index, current_key_index)
+                            time.sleep(0.3)
+                    if not down_button.value:
+                        if next_key_index < 13:
+                            next_key_index += 1
+                            current_key_index = update_key_selection(next_key_index, current_key_index)
+                            time.sleep(0.3)
+                    if not select.value:
+                        
+                        key_selected = True
+                        selected_key = keys[current_key_index]
+                        #display_chords_for_key(selected_key)
+                        time.sleep(0.3)
             elif current_page == 3:
                 if not modified:
                     modified = modify_mode(text, group, tri1, tri2, "Strum mode selected")
+            if not exit_button.value:
+                current_page = 1
+                next_page = 1
+                clean_up(group)
+                initialize_page()
+                selected = False
+                modified = False
+                key_selected = False
+                current_key_index = 0
+                next_key_index = 0
+                time.sleep(0.3)
+
         for i in range(7):
             buttons = note_buttons[i]
             #  if button is pressed...
@@ -270,5 +375,4 @@ display.root_group = group
 
 # Start the main loop
 main_loop()
-
 
