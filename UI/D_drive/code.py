@@ -274,9 +274,9 @@ def initialize_page():
     tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=0xff99c8, outline=0x8338ec)
     tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=0xff99c8, outline=0x8338ec)
     text = label.Label(terminalio.FONT, text="Traditional mode", color=0xffc8dd)
-    text1 = label.Label(terminalio.FONT, text="", color=0xf15bb5, scale = 2)
-    text2 = label.Label(terminalio.FONT, text="", color=0xff5400, scale = 2)
-    text3 = label.Label(terminalio.FONT, text="", color=0x9b5de5, scale = 2)
+    text1 = label.Label(terminalio.FONT, text="", color=0xf15bb5)
+    text2 = label.Label(terminalio.FONT, text="", color=0xff5400)
+    text3 = label.Label(terminalio.FONT, text="", color=0x9b5de5)
 
     chord_label_list = []
 
@@ -323,7 +323,7 @@ def initialize_page():
             text_label.anchored_position = (x + rect_width / 2, y + rect_height / 2)
             group.append(text_label)
             chord_label_list.append(text_label)
-
+    gc.collect()
     return text
 
 def add_outline(fill_color, outline_colors, rect_width=56, rect_height=44, margin_x=7, margin_y=24):
@@ -336,9 +336,10 @@ def add_outline(fill_color, outline_colors, rect_width=56, rect_height=44, margi
                 x = start_x + col * (rect_width + margin_x)
                 y = start_y + row_index * (rect_height + margin_y)
                 group.remove(rect)
-                new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=8)
+                new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=3)
                 group.append(new_rect)
                 grid_rects[row_index][col] = new_rect
+        gc.collect()
 
 
 def modify_mode(text_obj, group, tri1, tri2, mode_text):
@@ -482,8 +483,9 @@ def main_loop():
                             elif (count == 3):
                                 text3.text = guitar_chord[strum_key][current_chord_index]
                                 add_outline(fill_color=0x4f518c, outline_colors=row_colors)
+                            gc.collect()
 
-                    
+
 
                 #if not modified:
                     #modified = modify_mode(text, group, tri1, tri2, "Strum mode selected")
@@ -491,6 +493,7 @@ def main_loop():
                 current_page = 1
                 next_page = 1
                 clean_up(group)
+                gc.collect()
                 initialize_page()
                 selected = False
                 modified = False
@@ -502,6 +505,7 @@ def main_loop():
                 next_chord_index = 0
                 current_chord_index = 0
                 strum_key = ""
+
 
         for i in range(7):
             buttons = note_buttons[i]
