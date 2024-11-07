@@ -24,6 +24,8 @@ keys = [
     "B major", "B minor"
 ]
 
+guitar_keys = ["C major", "D major", "E major", "F major", "G major","A major", "B major"]
+
 chords = {
     "C major": ["Em", "Am", "Dm", "G", "C", "F", "E", "A", "D", "G", "C", "F"],
     "D major": ["F#m", "Bm", "Em", "A", "D", "G", "F#", "B", "E", "A", "D", "G"],
@@ -32,7 +34,7 @@ chords = {
     "G major": ["Bm", "Em", "Am", "D", "G", "C", "B", "E", "A", "D", "G", "C"],
     "A major": ["C#m", "F#m", "Bm", "E", "A", "D", "C#", "F#", "B", "E", "A", "D"],
     "B major": ["D#m", "G#m", "C#m", "F#", "B", "E", "D#", "G#", "C#", "F#", "B", "E"],
-    
+
     "C minor": ["Eb", "Ab", "Ddim", "G", "Cm", "Fm", "Eb", "Ab", "D", "G", "C", "F"],
     "D minor": ["F", "Bb", "Edim", "A", "Dm", "Gm", "F", "Bb", "E", "A", "D", "G"],
     "E minor": ["G", "C", "F#dim", "B", "Em", "Am", "G", "C", "F#", "B", "E", "A"],
@@ -40,6 +42,16 @@ chords = {
     "G minor": ["Bb", "Eb", "Adim", "D", "Gm", "Cm", "Bb", "Eb", "A", "D", "G", "C"],
     "A minor": ["C", "F", "Bdim", "E", "Am", "Dm", "C", "F", "B", "E", "A", "D"],
     "B minor": ["D", "G", "C#dim", "F#", "Bm", "Em", "D", "G", "C#", "F#", "B", "E"]
+}
+
+guitar_chord = {
+    "C major": ["C", "Dm", "Em", "F", "FG", "Am", "G7"],
+    "D major": ["D", "Em", "F#m", "G", "A", "Em", "A7"],
+    "E major": ["E", "F#m", "G#m", "A", "B", "C#m", "B7"],
+    "F major": ["F", "Gm", "Am", "Bb", "C", "Dm", "C7"],
+    "G major": ["G", "Am", "Bm", "C", "D", "Em", "D7"],
+    "A major": ["A", "Bm", "C#m", "D", "E", "F#m", "E7"],
+    "B major": ["B", "C#m", "D#m", "E", "F#", "G#m", "F#7"]
 }
 
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
@@ -190,7 +202,7 @@ def update_mode(next_page, current_page):
 
     gc.collect()
     return next_page
-    
+
 def update_key_selection(next_key_index, current_key_index):
     global tri1, tri2, text
     if next_key_index == 0 and current_key_index == 1:
@@ -204,6 +216,35 @@ def update_key_selection(next_key_index, current_key_index):
     text.text = keys[next_key_index]
     gc.collect()
     return next_key_index
+    
+def update_guitar_key_selection(next_key_index, current_key_index):
+    global tri1, tri2, text
+    if next_key_index == 0 and current_key_index == 1:
+        group.remove(tri1)
+    elif next_key_index == 1 and current_key_index == 0:
+        group.append(tri1)
+    elif next_key_index == 5 and current_key_index == 6:
+        group.append(tri2)
+    elif next_key_index == 6 and current_key_index == 5:
+        group.remove(tri2)
+    text.text = guitar_keys[next_key_index]
+    gc.collect()
+    return next_key_index
+
+def update_guitar_chord_selection(next_chord_index, current_chord_index, strum_key):
+    global tri1, tri2, text
+    if next_chord_index == 0 and current_chord_index == 1:
+        group.remove(tri1)
+    elif next_chord_index == 1 and current_chord_index == 0:
+        group.append(tri1)
+    elif next_chord_index == 5 and current_chord_index == 6:
+        group.append(tri2)
+    elif next_chord_index == 6 and current_chord_index == 5:
+        group.remove(tri2)
+    print("Update function strum key: ", strum_key)
+    text.text = guitar_chord[strum_key][next_chord_index]
+    gc.collect()
+    return next_chord_index
 
 def display_chords_for_key(selected_key):
     if tri1 in group:
@@ -213,10 +254,10 @@ def display_chords_for_key(selected_key):
     chord_text_list = chords[selected_key]
     for i in range(len(chord_label_list)):
         chord_label_list[i].text = chord_text_list[i]
-        chord_label_list[i].color = 0x5f0f40
+        chord_label_list[i].color = white
     gc.collect()
-        
-    
+
+
 def initialize_page():
     cx = int((display.width) / 2)
     cy = int((display.height) / 2)
@@ -224,43 +265,58 @@ def initialize_page():
     pad = 100
     size = minor - pad
 
-    global text, tri1, tri2, rnd, grid_rects, chord_label_list
+    global text, text1, text2, text3, tri1, tri2, rnd, grid_rects, chord_label_list
 
     grid_rects = [[], [], []]
 
     # Create RoundRect and Triangles
-    bg = Rect(0, 0, display.width, display.height, fill=0x5662b6)
-    rnd = RoundRect(cx - 100, cy - 130, 200, 20, int(size / 5), stroke=1, fill=gray, outline=0xf5f5f5)
-    tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=pink, outline=blue)
-    tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=pink, outline=blue)
-    text = label.Label(terminalio.FONT, text="Traditional mode", color=white)
+    bg = Rect(0, 0, display.width, display.height, fill=white)
+    rnd = RoundRect(cx - 100, cy - 130, 200, 20, int(size / 5), stroke=1, fill=0x5a189a, outline=0xe0aaff)
+    tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=0xff99c8, outline=0x8338ec)
+    tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=0xff99c8, outline=0x8338ec)
+    text = label.Label(terminalio.FONT, text="Traditional mode", color=0xffc8dd)
+    text1 = label.Label(terminalio.FONT, text="", color=0xf15bb5)
+    text2 = label.Label(terminalio.FONT, text="", color=0xff5400)
+    text3 = label.Label(terminalio.FONT, text="", color=0x9b5de5)
+
     chord_label_list = []
 
     text.anchor_point = (0.5, 0.5)
     text.anchored_position = (120, 40)
 
+    text1.anchor_point = (0.5, 0.5)
+    text1.anchored_position = (50, 100)
+    
+    text2.anchor_point = (0.5, 0.5)
+    text2.anchored_position = (120, 100)
+    
+    text3.anchor_point = (0.5, 0.5)
+    text3.anchored_position = (190, 100)
     # Add the shapes to the group
     group.append(bg)
     group.append(rnd)
     group.append(tri2)
     group.append(text)
-
-    rect_width = 40
-    rect_height = 30
-    margin_x = 10
-    margin_y = 30
+    group.append(text1)
+    group.append(text2)
+    group.append(text3)
+    
+    rect_width = 56
+    rect_height = 48
+    margin_x = 7
+    margin_y = 20
 
     start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
-    start_y = display.height - rect_height * 3 - margin_y * 2 - 40
+    start_y = display.height - rect_height * 3 - margin_y * 2 
 
     for row in range(3):
         for col in range(4):
             x = start_x + col * (rect_width + margin_x)
             y = start_y + row * (rect_height + margin_y)
-            rect = Rect(x, y, rect_width, rect_height, fill=white)
+            rect = Rect(x, y, rect_width, rect_height, fill=0x4f518c)
             group.append(rect)
             grid_rects[row].append(rect)
-            
+
             chord_index = row * 4 + col
             chord_text = ""
             text_label = label.Label(terminalio.FONT, text=chord_text)
@@ -271,19 +327,19 @@ def initialize_page():
 
     return text
 
-def add_outline(fill_color, outline_colors, rect_width=40, rect_height=30, margin_x=10, margin_y=30):
+def add_outline(fill_color, outline_colors, rect_width=56, rect_height=48, margin_x=7, margin_y=20):
 
     start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
-    start_y = display.height - rect_height * 3 - margin_y * 2 - 40
-
+    start_y = display.height - rect_height * 3 - margin_y * 2
     for row_index, rects in enumerate(grid_rects):
-        for col, rect in enumerate(rects):
-            x = start_x + col * (rect_width + margin_x)
-            y = start_y + row_index * (rect_height + margin_y)
-            group.remove(rect)
-            new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=2)
-            group.append(new_rect)
-            grid_rects[row_index][col] = new_rect
+        if row_index == count: 
+            for col, rect in enumerate(rects):            
+                x = start_x + col * (rect_width + margin_x)
+                y = start_y + row_index * (rect_height + margin_y)
+                group.remove(rect)
+                new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=2)
+                group.append(new_rect)
+                grid_rects[row_index][col] = new_rect
 
 
 def modify_mode(text_obj, group, tri1, tri2, mode_text):
@@ -293,29 +349,53 @@ def modify_mode(text_obj, group, tri1, tri2, mode_text):
     if tri2 in group:
         group.remove(tri2)
     if mode_text == "Strum mode selected":
-        add_outline(fill_color=white, outline_colors=row_colors)
+        add_outline(fill_color=0x4f518c, outline_colors=row_colors)
     return True
-    
-def initialize_chord(tri1, text):
-    if text.text == "Chord mode":
+
+def initialize_chord(tri1, tri2, text):
+    if text.text == "Chord mode" or text.text == "Strum mode":
         text.text = "Select the Key"
-        time.sleep(0.5)
+        time.sleep(1)
         text.text = "C major"
         if tri1 in group:
             group.remove(tri1)
+        if tri2 not in group:
+            group.append(tri2)
     gc.collect()
-    
+
+
+def initialize_strum_chord(tri1, tri2, text):
+    if text.text in guitar_chord.keys():
+        strum_key = text.text
+        print("Strum key: ", strum_key)
+        text.text = "Select the Chord"
+        time.sleep(1)
+        text.text = guitar_chord[strum_key][0]
+        if tri1 in group:
+            group.remove(tri1)
+        if tri2 not in group:
+            group.append(tri2)
+    gc.collect()
+
+
 def main_loop():
     global key_selected
+    global count
+    global strum_key
+    strum_key = ""
+    print("Main Strum Key value: ", strum_key)
+    count = 0
     current_page = 1
     next_page = 1
-
     initialize_page()
     selected = False
     modified = False
     key_selected = False
     current_key_index = 0
     next_key_index = 0
+    strum_chord_selected = False
+    current_chord_index = 0
+    next_chord_index = 0
 
     while True:
         if not selected:
@@ -340,7 +420,7 @@ def main_loop():
                     modified = modify_mode(text, group, tri1, tri2, "Regular mode selected")
             elif current_page == 2:
                 if not key_selected:
-                    initialize_chord(tri1, text)
+                    initialize_chord(tri1,tri2, text)
                     if not up_button.value:
                         if next_key_index > 0:
                             next_key_index -= 1
@@ -352,14 +432,52 @@ def main_loop():
                             current_key_index = update_key_selection(next_key_index, current_key_index)
                             time.sleep(0.3)
                     if not select.value:
-                        
+
                         key_selected = True
                         selected_key = keys[current_key_index]
                         display_chords_for_key(selected_key)
                         time.sleep(0.3)
             elif current_page == 3:
-                if not modified:
-                    modified = modify_mode(text, group, tri1, tri2, "Strum mode selected")
+                if not key_selected:
+                    initialize_chord(tri1,tri2, text)
+                    if not up_button.value:
+                        if next_key_index > 0:
+                            next_key_index -= 1
+                            current_key_index = update_guitar_key_selection(next_key_index, current_key_index)
+                            time.sleep(0.3)
+                    if not down_button.value:
+                        if next_key_index < 6:
+                            next_key_index += 1
+                            current_key_index = update_guitar_key_selection(next_key_index, current_key_index)
+                            time.sleep(0.3)
+                    if not select.value:
+                        key_selected = True
+                        selected_key = keys[current_key_index]
+                        time.sleep(0.3)
+                    
+                else:
+                    initialize_strum_chord(tri1,tri2, text)
+                    print(count)
+                    while count < 3:
+                        if not up_button.value:
+                            if next_chord_index > 0:
+                                next_chord_index -= 1
+                                print("test 1")
+                                current_chord_index = update_guitar_chord_selection(next_chord_index, current_chord_index,strum_key)
+                                time.sleep(0.3)
+                        if not down_button.value:
+                            if next_chord_index < 6:
+                                next_chord_index += 1
+                                print("test2")
+                                print("Test1 strum key value: ", strum_key)
+                                current_chord_index = update_guitar_chord_selection(next_chord_index, current_chord_index, strum_key)
+                                time.sleep(0.3)
+                        if not select.value:
+                            count+=1
+                            time.sleep(0.3)
+                            
+                #if not modified:
+                    #modified = modify_mode(text, group, tri1, tri2, "Strum mode selected")
             if not exit_button.value:
                 current_page = 1
                 next_page = 1
@@ -371,7 +489,8 @@ def main_loop():
                 current_key_index = 0
                 next_key_index = 0
                 time.sleep(0.3)
-
+                count = 0
+                
         for i in range(7):
             buttons = note_buttons[i]
             #  if button is pressed...
