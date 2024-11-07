@@ -216,7 +216,7 @@ def update_key_selection(next_key_index, current_key_index):
     text.text = keys[next_key_index]
     gc.collect()
     return next_key_index
-    
+
 def update_guitar_key_selection(next_key_index, current_key_index):
     global tri1, tri2, text
     if next_key_index == 0 and current_key_index == 1:
@@ -241,7 +241,6 @@ def update_guitar_chord_selection(next_chord_index, current_chord_index, strum_k
         group.append(tri2)
     elif next_chord_index == 6 and current_chord_index == 5:
         group.remove(tri2)
-    print("Update function strum key: ", strum_key)
     text.text = guitar_chord[strum_key][next_chord_index]
     gc.collect()
     return next_chord_index
@@ -275,9 +274,9 @@ def initialize_page():
     tri1 = Triangle(cx - 40, cy - 140, cx, cy - 150, cx + 40, cy - 140, fill=0xff99c8, outline=0x8338ec)
     tri2 = Triangle(cx - 40, cy - 100, cx, cy - 90, cx + 40, cy - 100, fill=0xff99c8, outline=0x8338ec)
     text = label.Label(terminalio.FONT, text="Traditional mode", color=0xffc8dd)
-    text1 = label.Label(terminalio.FONT, text="", color=0xf15bb5)
-    text2 = label.Label(terminalio.FONT, text="", color=0xff5400)
-    text3 = label.Label(terminalio.FONT, text="", color=0x9b5de5)
+    text1 = label.Label(terminalio.FONT, text="", color=0xf15bb5, scale = 2)
+    text2 = label.Label(terminalio.FONT, text="", color=0xff5400, scale = 2)
+    text3 = label.Label(terminalio.FONT, text="", color=0x9b5de5, scale = 2)
 
     chord_label_list = []
 
@@ -286,10 +285,10 @@ def initialize_page():
 
     text1.anchor_point = (0.5, 0.5)
     text1.anchored_position = (50, 100)
-    
+
     text2.anchor_point = (0.5, 0.5)
     text2.anchored_position = (120, 100)
-    
+
     text3.anchor_point = (0.5, 0.5)
     text3.anchored_position = (190, 100)
     # Add the shapes to the group
@@ -300,14 +299,14 @@ def initialize_page():
     group.append(text1)
     group.append(text2)
     group.append(text3)
-    
+
     rect_width = 56
-    rect_height = 48
+    rect_height = 44
     margin_x = 7
-    margin_y = 20
+    margin_y = 24
 
     start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
-    start_y = display.height - rect_height * 3 - margin_y * 2 
+    start_y = display.height - rect_height * 3 - margin_y * 2
 
     for row in range(3):
         for col in range(4):
@@ -327,17 +326,17 @@ def initialize_page():
 
     return text
 
-def add_outline(fill_color, outline_colors, rect_width=56, rect_height=48, margin_x=7, margin_y=20):
+def add_outline(fill_color, outline_colors, rect_width=56, rect_height=44, margin_x=7, margin_y=24):
 
     start_x = (display.width - (rect_width * 4 + margin_x * 3)) // 2
     start_y = display.height - rect_height * 3 - margin_y * 2
     for row_index, rects in enumerate(grid_rects):
-        if row_index == count: 
-            for col, rect in enumerate(rects):            
+        if row_index == count-1:
+            for col, rect in enumerate(rects):
                 x = start_x + col * (rect_width + margin_x)
                 y = start_y + row_index * (rect_height + margin_y)
                 group.remove(rect)
-                new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=2)
+                new_rect = Rect(x, y, rect_width, rect_height, fill=fill_color, outline=outline_colors[row_index], stroke=8)
                 group.append(new_rect)
                 grid_rects[row_index][col] = new_rect
 
@@ -365,9 +364,9 @@ def initialize_chord(tri1, tri2, text):
 
 
 def initialize_strum_chord(tri1, tri2, text):
+    global strum_key
     if text.text in guitar_chord.keys():
         strum_key = text.text
-        print("Strum key: ", strum_key)
         text.text = "Select the Chord"
         time.sleep(1)
         text.text = guitar_chord[strum_key][0]
@@ -377,13 +376,11 @@ def initialize_strum_chord(tri1, tri2, text):
             group.append(tri2)
     gc.collect()
 
-
 def main_loop():
     global key_selected
     global count
     global strum_key
     strum_key = ""
-    print("Main Strum Key value: ", strum_key)
     count = 0
     current_page = 1
     next_page = 1
@@ -454,13 +451,13 @@ def main_loop():
                         key_selected = True
                         selected_key = keys[current_key_index]
                         time.sleep(0.3)
-                    
+
                 else:
                     initialize_strum_chord(tri1,tri2, text)
-                    print(count)
-                    while count < 3:
+                    if count < 3:
                         if not up_button.value:
                             if next_chord_index > 0:
+                                next_chord_index -= 1
                                 next_chord_index -= 1
                                 print("test 1")
                                 current_chord_index = update_guitar_chord_selection(next_chord_index, current_chord_index,strum_key)
@@ -474,8 +471,20 @@ def main_loop():
                                 time.sleep(0.3)
                         if not select.value:
                             count+=1
+                            print(count)
                             time.sleep(0.3)
-                            
+                            if (count == 1):
+                                text1.text = guitar_chord[strum_key][current_chord_index]
+                                add_outline(fill_color=0x4f518c, outline_colors=row_colors)
+                            elif (count == 2):
+                                text2.text = guitar_chord[strum_key][current_chord_index]
+                                add_outline(fill_color=0x4f518c, outline_colors=row_colors)
+                            elif (count == 3):
+                                text3.text = guitar_chord[strum_key][current_chord_index]
+                                add_outline(fill_color=0x4f518c, outline_colors=row_colors)
+
+                    
+
                 #if not modified:
                     #modified = modify_mode(text, group, tri1, tri2, "Strum mode selected")
             if not exit_button.value:
@@ -490,7 +499,10 @@ def main_loop():
                 next_key_index = 0
                 time.sleep(0.3)
                 count = 0
-                
+                next_chord_index = 0
+                current_chord_index = 0
+                strum_key = ""
+
         for i in range(7):
             buttons = note_buttons[i]
             #  if button is pressed...
